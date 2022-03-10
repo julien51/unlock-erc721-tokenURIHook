@@ -1,82 +1,113 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.17 <0.9.0;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import '@unlock-protocol/contracts/dist/PublicLock/IPublicLockV9.sol';
+import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV9.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
-import 'hardhat/console.sol';
+import "hardhat/console.sol";
+import "./Layer.sol";
 
 /**
  * @notice Functions to be implemented by a tokenURIHook.
  * @dev Lock hooks are configured by calling `setEventHooks` on the lock.
  */
-contract LockTokenURIHook
-{
+contract LockTokenURIHook {
+    address _avatarContract;
+    address _weaponContract;
+    address _outfitContract;
+    address _avatarLayerContract;
+    address _weaponLayerContract;
+    address _outfitLayerContract;
 
-  address nftContractAddress;
-  
-  function setNftContractAddress(address _contractAddress) public {
-    nftContractAddress = _contractAddress;
-  }
-
-  // see https://github.com/unlock-protocol/unlock/blob/master/smart-contracts/contracts/interfaces/hooks/ILockTokenURIHook.sol
-  function tokenURI(
-    address lockAddress,
-    address, // operator,
-    address owner, // owner,
-    uint256 keyId,
-    uint //expirationTimestamp
-  ) external view returns(string memory) {
-
-    // get lock instance
-    IPublicLockV9 lock = IPublicLockV9(lockAddress);
-
-    // if NFT contract is not set, returns default lock tokenURI
-    if(nftContractAddress == address(0)) {
-      return lock.tokenURI(keyId);
+    constructor(
+        address avatarContract,
+        address weaponContract,
+        address outfitContract,
+        address avatarLayerContract,
+        address weaponLayerContract,
+        address outfitLayerContract
+    ) public {
+        _avatarContract = avatarContract;
+        _weaponContract = weaponContract;
+        _outfitContract = outfitContract;
+        _avatarLayerContract = avatarLayerContract;
+        _weaponLayerContract = weaponLayerContract;
+        _outfitLayerContract = outfitLayerContract;
     }
-    
-    // check nft ownership
-    IERC721 nft = IERC721(nftContractAddress);
-    bool ownsNft = nft.balanceOf(owner) > 0;
-    console.log('== owns nft:', ownsNft);
-    
-    // check key validity
-    bool hasValidKey = lock.getHasValidKey(owner);
-    console.log('== has valid key:', hasValidKey);
-    
-    // custom logic
-    string memory color = "grey";
-    if(hasValidKey && ownsNft) {
-      color =  "green";
-    } else if(hasValidKey && !ownsNft) {
-      color =  "orange";
-    } else if(!hasValidKey && ownsNft) {
-      color =  "red";
+
+    // see https://github.com/unlock-protocol/unlock/blob/master/smart-contracts/contracts/interfaces/hooks/ILockTokenURIHook.sol
+    function tokenURI(
+        address lockAddress,
+        address, // operator,
+        address owner, // owner,
+        uint256 keyId,
+        uint256 //expirationTimestamp
+    ) external view returns (string memory) {
+        string memory avatarLayer;
+        string memory weaponLayer;
+        string memory outfitLayer;
+
+        IPublicLockV9 avatarContract = IPublicLockV9(_avatarContract);
+        IPublicLockV9 weaponContract = IPublicLockV9(_weaponContract);
+        IPublicLockV9 outfit = IPublicLockV9(_outfitContract);
+        Layer avatarLayerContract = Layer(_avatarLayerContract);
+        Layer weaponLayerContract = Layer(_weaponLayerContract);
+        Layer outfitLayerContract = Layer(_outfitLayerContract);
+
+        if (lockAddress == _avatarContract) {
+            bool hasAvatar = avatarContract.getHasValidKey(owner);
+            if (hasAvatar) {
+                avatarLayer = avatarLayerContract.getLayer(
+                    keyId % avatarLayerContract.getLayerCount()
+                );
+            }
+        }
+
+        if (lockAddress == _weaponContract || lockAddress == _avatarContract) {
+            bool hasWeapon = weaponContract.getHasValidKey(owner);
+            if (hasWeapon) {
+                weaponLayer = weaponLayerContract.getLayer(
+                    keyId % weaponLayerContract.getLayerCount()
+                );
+            }
+        }
+
+        if (lockAddress == _outfitContract || lockAddress == _avatarContract) {
+            bool hasOutfit = outfit.getHasValidKey(owner);
+            if (hasOutfit) {
+                outfitLayer = outfitLayerContract.getLayer(
+                    keyId % outfitLayerContract.getLayerCount()
+                );
+            }
+        }
+
+        // draw svg
+        string memory svg = string(
+            abi.encodePacked(
+                '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">',
+                avatarLayer,
+                outfitLayer,
+                weaponLayer,
+                "</svg>"
+            )
+        );
+
+        string memory image = string(
+            abi.encodePacked(
+                "data:image/svg+xml;base64,",
+                Base64.encode(bytes(abi.encodePacked(svg)))
+            )
+        );
+
+        string memory json = string(
+            abi.encodePacked('{"image":"', image, '"}')
+        );
+
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(bytes(abi.encodePacked(json)))
+                )
+            );
     }
-    console.log('== color:', color);
-
-    // draw svg
-    string memory svg = string(
-      abi.encodePacked(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 450"><title>',
-        lock.name(),
-        '</title><path d="M340.03287,180.49207H325.069V124.88428H269.47281v55.60779H180.64664V124.88428H125.05v55.60779H109.967v26.42028H125.05v41.62574c0,52.08154,45.05225,94.57763,100.3291,94.57763,54.957,0,99.68994-42.49609,99.68994-94.57763V206.91235h14.96387Zm-70.56006,68.046c0,24.603-19.49072,44.73242-44.09375,44.73242a44.86368,44.86368,0,0,1-44.73242-44.73242V206.91235h88.82617Z" style="fill:',
-        color,
-        '"/></svg>'
-      )
-    );
-
-    return string(
-          abi.encodePacked(
-              "data:image/svg+xml;base64,",
-              Base64.encode(
-                  bytes(
-                      abi.encodePacked(svg)
-                  )
-              )
-          )
-      );
-
-  }
 }
