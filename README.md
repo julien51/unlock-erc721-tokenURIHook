@@ -54,3 +54,9 @@ yarn # or npm install
 # run the script
 npx hardhat run scripts/create-lock-with-hook.js
 ```
+
+### TODO
+
+- Create a script that generates the hook file from config
+- Create a script that cleans up and sanitizes SVG files (remove the `<svg>` is required)
+- Create a script that outputs all possible combination in a folder for inspection.
