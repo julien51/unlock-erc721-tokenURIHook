@@ -23,15 +23,15 @@ module.exports = {
     rinkeby: {
       chainId: 4,
       url: `https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`,
-      accounts: [``],
-    },
+      accounts: [`50820CE181D1AEB845E6B545A2DB7B7B3E0C8E42BB0BA8B4ACE895BE437C448B`]
+    }
   },
   solidity: {
-    version: "0.8.7",
+    version: '0.8.7',
     // optimizer is required to deploy unlock contracts
     optimizer: {
       enabled: true,
       runs: 20,
     },
   },
-};
+}

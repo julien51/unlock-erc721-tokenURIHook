@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.17 <0.9.0;
 
+/**
+ * A very basic layer contract that's initialized with different version of a layer
+ * and then serves a layer based on an index.
+ */
 contract Layer {
     string[] private _layers;
 

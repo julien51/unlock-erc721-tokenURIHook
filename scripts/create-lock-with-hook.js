@@ -1,5 +1,5 @@
 /* eslint-disable node/no-unsupported-features/es-syntax */
-const { unlock, ethers, run } = require("hardhat");
+const { unlock, ethers, run, network } = require("hardhat");
 
 const { resolve } = require("path");
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
@@ -23,8 +23,9 @@ async function* getFiles(dir) {
 const { AddressZero } = ethers.constants;
 
 async function main() {
-  const svgs = {};
 
+  // Import all SVG layers
+  const svgs = {};
   for await (const f of getFiles("scripts/svg/")) {
     const fullPath = f.split("/");
     const type = fullPath[fullPath.length - 2];
@@ -38,71 +39,63 @@ async function main() {
   // make sure we compile the latest versions
   run("compile");
 
-  // start workflow
-  console.log("Unlock TokenURI Hook example:");
+  if (network.name === "hardhat") {
+    await unlock.deployProtocol();
+  }
 
   // deploy Layers
   const Layer = await ethers.getContractFactory("Layer");
-  const avatars = Layer.attach('0x4B340c9799D832F909Cb92d2802984ef413CF36b')
-  // const avatars = await Layer.deploy(svgs.avatar);
-  // await avatars.deployed();
+  const avatars = await Layer.deploy(svgs.avatar);
+  await avatars.deployed();
   console.log("> avatars deployed to:", avatars.address);
 
-  const outfits = await Layer.attach('0xfe52ACb66Ef2F9E10E4809AcBDEfDB2b5712d445');
-  // const outfits = await Layer.deploy(svgs.outfit);
-  // await outfits.deployed();
+  const outfits = await Layer.deploy(svgs.outfit);
+  await outfits.deployed();
   console.log("> outfits deployed to:", outfits.address);
 
-  const weapons = await Layer.attach('0x443D0Bf400949FbF50D641Ab7F7546177d562a73');
-  // const weapons = await Layer.deploy(svgs.weapon);
-  // await weapons.deployed();
+  const weapons = await Layer.deploy(svgs.weapon);
+  await weapons.deployed();
   console.log("> weapons deployed to:", weapons.address);
 
-  // deploy Unlock
-  // await unlock.deployProtocol();
 
 
   // create a Lock for avatar
-  // const avatarLockArgs = {
-  //   name: "Avatar Lock",
-  //   keyPrice: 0,
-  //   expirationDuration: 3600 * 24, // (24h)
-  //   currencyContractAddress: AddressZero, // no ERC20 specified
-  //   maxNumberOfKeys: 10,
-  // };
-  // const { lock: avatarLock } = await unlock.createLock(avatarLockArgs);
-  const avatarLock = await unlock.getLock('0x6c4374cB699F30aE6013eb0d67e5A8aFD3BE1773')
+  const avatarLockArgs = {
+    name: "Avatar Lock",
+    keyPrice: 0,
+    expirationDuration: 3600 * 24, // (24h)
+    currencyContractAddress: AddressZero, // no ERC20 specified
+    maxNumberOfKeys: 1000,
+  };
+  const { lock: avatarLock } = await unlock.createLock(avatarLockArgs);
   console.log(
     `> Lock '${await avatarLock.name()}' deployed to:`,
     avatarLock.address
   );
 
   // create a Lock for weapon
-  // const weaponLockArgs = {
-  //   name: "Weapon Lock",
-  //   keyPrice: 0,
-  //   expirationDuration: 3600 * 24, // (24h)
-  //   currencyContractAddress: AddressZero, // no ERC20 specified
-  //   maxNumberOfKeys: 10,
-  // };
-  // const { lock: weaponLock } = await unlock.createLock(weaponLockArgs);
-  const weaponLock = await unlock.getLock('0x84793bd014eBB3F84003904c43Ba23903aE7122C')
+  const weaponLockArgs = {
+    name: "Weapon Lock",
+    keyPrice: 0,
+    expirationDuration: 3600 * 24, // (24h)
+    currencyContractAddress: AddressZero, // no ERC20 specified
+    maxNumberOfKeys: 1000,
+  };
+  const { lock: weaponLock } = await unlock.createLock(weaponLockArgs);
   console.log(
     `> Lock '${await weaponLock.name()}' deployed to:`,
     weaponLock.address
   );
 
-
   // create a Lock for outfit
-  // const outfitLockArgs = {
-  //   name: "Outfit Lock",
-  //   keyPrice: 0,
-  //   expirationDuration: 3600 * 24, // (24h)
-  //   currencyContractAddress: AddressZero, // no ERC20 specified
-  //   maxNumberOfKeys: 10,
-  // };
-  // const { lock: outfitLock } = await unlock.createLock(outfitLockArgs);
-  const outfitLock = await unlock.getLock('0xe51cA1832Bf2a219c3df0561E571670f30dC5028')
+  const outfitLockArgs = {
+    name: "Outfit Lock",
+    keyPrice: 0,
+    expirationDuration: 3600 * 24, // (24h)
+    currencyContractAddress: AddressZero, // no ERC20 specified
+    maxNumberOfKeys: 1000,
+  };
+  const { lock: outfitLock } = await unlock.createLock(outfitLockArgs);
   console.log(
     `> Lock '${await outfitLock.name()}' deployed to:`,
     outfitLock.address
@@ -110,16 +103,15 @@ async function main() {
 
   // deploy the hook
   const LockTokenURIHook = await ethers.getContractFactory("LockTokenURIHook");
-  // const hook = await LockTokenURIHook.deploy(
-  //   avatarLock.address,
-  //   weaponLock.address,
-  //   outfitLock.address,
-  //   avatars.address,
-  //   weapons.address,
-  //   outfits.address
-  // );
-  // await hook.deployed();
-  const hook = await LockTokenURIHook.attach('0x4e4B1F4bcb2A6c2C9f36cD91d3921625b502eB31')
+  const hook = await LockTokenURIHook.deploy(
+    avatarLock.address,
+    weaponLock.address,
+    outfitLock.address,
+    avatars.address,
+    weapons.address,
+    outfits.address
+  );
+  await hook.deployed();
   console.log("> Hook deployed to:", hook.address);
 
   // set events hook
@@ -149,39 +141,18 @@ async function main() {
 
   await weaponLock
     .connect(signer)
-    .purchase(0, signer.address, AddressZero, AddressZero, [], {
-      value: 0,
-    });
-  const weaponKeyId = await weaponLock.getTokenIdFor(signer.address);
-  console.log(
-    `> Signer ${signer.address} bought the key ${weaponKeyId} on avatar lock`
-  );
-  const weaponTokenURI = await weaponLock.tokenURI(weaponKeyId);
-  console.log(weaponTokenURI);
+    .addLockManager("0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44");
 
   await outfitLock
     .connect(signer)
-    .purchase(0, signer.address, AddressZero, AddressZero, [], {
-      value: 0,
-    });
-  const outfitKeyId = await outfitLock.getTokenIdFor(signer.address);
-  console.log(
-    `> Signer ${signer.address} bought the key ${outfitKeyId} on avatar lock`
-  );
-  const outfitTokenURI = await outfitLock.tokenURI(outfitKeyId);
-  console.log(outfitTokenURI);
+    .addLockManager("0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44");
 
   await avatarLock
     .connect(signer)
-    .purchase(0, signer.address, AddressZero, AddressZero, [], {
-      value: 0,
-    });
-  const avatarKeyId = await avatarLock.getTokenIdFor(signer.address);
-  console.log(
-    `> Signer ${signer.address} bought the key ${avatarKeyId} on avatar lock`
-  );
-  const avatarTokenURI = await avatarLock.tokenURI(avatarKeyId);
-  console.log(avatarTokenURI);
+    .addLockManager("0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44");
+
+  console.log("Ready!")
+
 }
 
 main()
