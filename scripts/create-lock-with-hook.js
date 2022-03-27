@@ -1,3 +1,5 @@
+const path = require('path');
+
 /* eslint-disable node/no-unsupported-features/es-syntax */
 const { unlock, ethers, run, network } = require("hardhat");
 
@@ -27,7 +29,7 @@ async function main() {
   // Import all SVG layers
   const svgs = {};
   for await (const f of getFiles("scripts/svg/")) {
-    const fullPath = f.split("/");
+    const fullPath = f.split(path.sep);
     const type = fullPath[fullPath.length - 2];
     if (!svgs[type]) {
       svgs[type] = [];
