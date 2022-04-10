@@ -34,4 +34,5 @@ module.exports = {
       runs: 20,
     },
   },
+  initialDate: new Date("2022-04-10T06:00:00.000Z")
 }
