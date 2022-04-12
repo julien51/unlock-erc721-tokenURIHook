@@ -1,36 +1,16 @@
 const { expect } = require("chai");
-const { ethers, network, unlock } = require("hardhat");
+const { ethers, network } = require("hardhat");
+const { deployForTests } = require("./shared")
 
 describe("Mapping", () => {
 
   it("should map", async function () {
     const [purchaser] = await ethers.getSigners();
-
-    await unlock.deployProtocol()
-    const expirationDuration = 60 * 60 * 24 * 7
-    const maxNumberOfKeys = 100
-    const keyPrice = 0
-
-    const { lock: avatarLock } = await unlock.createLock({
-      expirationDuration,
-      maxNumberOfKeys,
-      keyPrice,
-      name: 'Avatar'
-    })
-
-    const { lock: buntaiLock } = await unlock.createLock({
-      expirationDuration,
-      maxNumberOfKeys,
-      keyPrice,
-      name: 'Buntai Weapons'
-    })
-
-    const { lock: gundanLock } = await unlock.createLock({
-      expirationDuration,
-      maxNumberOfKeys,
-      keyPrice,
-      name: 'Gundan Weapons'
-    })
+    const {
+      avatarLock,
+      buntaiLock,
+      gundanLock,
+    } = await deployForTests()
 
     const Mapping = await ethers.getContractFactory("Mapping");
     const mapping = await Mapping.deploy(avatarLock.address, buntaiLock.address, gundanLock.address);

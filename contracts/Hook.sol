@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.17 <0.9.0;
 
-// TODO change me to v10!
-import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV9.sol";
+import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV10.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "hardhat/console.sol";
@@ -15,20 +14,25 @@ import { BokkyPooBahsDateTimeLibrary } from "./BokkyPooBahsDateTimeLibrary.sol";
  */
 contract Hook {
     address public _avatarLock;
-    address public _weaponLock;
+    address public _buntaiLock;
+    address public _gundanLock;
+    address public _mappingContract;
     string public _ipfsHash;
-    mapping(uint => uint) public avatarsWeapons;
 
     /**
      * The hook is initialized with each lock contract as well as each layer contract
      */
     constructor(
         address avatarLock,
-        address weaponLock,
+        address buntaiLock,
+        address gundanLock,
+        address mappingContract,
         string memory ipfsHash
     ) {
         _avatarLock = avatarLock;
-        _weaponLock = weaponLock;
+        _buntaiLock = buntaiLock;
+        _gundanLock = gundanLock;
+        _mappingContract = mappingContract;
         _ipfsHash = ipfsHash;
     }
 
@@ -37,15 +41,17 @@ contract Hook {
      */
     function keyPurchasePrice(
         address, /* from */
-        address recipient, /* recipient */
+        address, /* recipient */
         address, /* referrer */
         bytes calldata /* data */
     ) external view returns (uint256 minKeyPrice) {
-        return IPublicLockV9(recipient).keyPrice();
+        // TODO Let's look at the list? 
+        return IPublicLock(msg.sender).keyPrice();
     }
 
     /**
-     *
+     * When a new key is purchased, we need to grant a weapon
+     * Challenge: we
      */
     function onKeyPurchase(
         address, /*from*/
@@ -55,98 +61,97 @@ contract Hook {
         uint256, /*minKeyPrice*/
         uint256 /*pricePaid*/
     ) external {
-        IPublicLockV9 weapon = IPublicLockV9(_weaponLock);
-        uint expirationDuration = weapon.expirationDuration();
-        address[] memory recipients;
-        recipients[0] = recipient;
-        uint[] memory expirations;
-        expirations[0] = expirationDuration;
-        address[] memory managers;
-        managers[0] = recipient;
-        weapon.grantKeys(recipients, expirations, managers);
+        if (msg.sender == _avatarLock) {
+            // If the sender is the avatar lock
+            IPublicLock avatar = IPublicLock(_avatarLock);
+            uint id = avatar.totalSupply();
 
-        uint numberOfKeys = weapon.balanceOf(recipient); 
-        uint keyId = weapon.tokenOfOwnerByIndex(recipient, numberOfKeys);
-        // Let's get the tokenId
+            address[] memory recipients = new address[](1);
+            recipients[0] = recipient;
 
+            uint[] memory expirations = new uint[](1);
+            expirations[0] = type(uint256).max; // Not expiring!
 
-        // This should grant a weapon to the recipient!
-        // and set the 
-//         function grantKeys(
-//     address[] calldata _recipients,
-//     uint[] calldata _expirationTimestamps,
-//     address[] calldata _keyManagers
-//   )
+            address[] memory managers = new address[](1);
+            managers[0] = recipient;
+
+            if (id % 2 == 0) {
+                IPublicLock(_buntaiLock).grantKeys(recipients, expirations, managers);
+            } else {
+                IPublicLock(_gundanLock).grantKeys(recipients, expirations, managers);
+            }
+        }
     }
-
 
     // see https://github.com/unlock-protocol/unlock/blob/master/smart-contracts/contracts/interfaces/hooks/IHook.sol
     function tokenURI(
-        address lockAddress,
+        address, // lockAddress,
         address, // operator, // We could alter the rendering based on _who_ is viewing!
-        address owner,
-        uint256 keyId,
-        uint256 //expirationTimestamp //  a cool trick could be to render based on how far the expiration of the key is!
+        address, // owner,
+        uint256, // keyId,
+        uint256  //expirationTimestamp //  a cool trick could be to render based on how far the expiration of the key is!
     ) external view returns (string memory) {
-        uint timeOfDay = 0;
-        string memory kind = "";
-        string memory image = "";
 
-        (, , , uint hour, , ) = BokkyPooBahsDateTimeLibrary.timestampToDateTime(block.timestamp);
-        if (hour <= 8) {
-            timeOfDay = 0; // 0 => night
-        } else if (hour <= 17) {
-            timeOfDay = 1; // 1 => day
-        } else if (hour <= 21) {
-            timeOfDay = 2; // 2 => sunset
-        } else {
-            timeOfDay = 0; // 0 => night
-        }
+        // uint timeOfDay = 0;
+        // string memory kind = "";
+        string memory image = "QmYkkshevBxHg7XwdP1pw6A4T82xzD8G2RpLDFo6KDy3zm";
 
-        // If the calling contract is the avatar contract
-        if (lockAddress == _avatarLock) {
-            kind = "avatars";
-            uint weapon = 0;
-            // Check if there is a mapping!
-            if (avatarsWeapons[keyId] > 0) {
-                // If there is one, let's check the owner and make sure it's the correct one
-                IPublicLockV9 weaponLock = IPublicLockV9(_weaponLock);
-                // TODO change me in v10!
-                uint weaponExpiration = weaponLock.keyExpirationTimestampFor(owner);
-                address weaponOwner = weaponLock.ownerOf(keyId);
-                if (weaponExpiration > block.timestamp && weaponOwner == owner) {
-                    weapon = avatarsWeapons[keyId];
-                }
-            }
+        // (, , , uint hour, , ) = BokkyPooBahsDateTimeLibrary.timestampToDateTime(block.timestamp);
+        // if (hour <= 8) {
+        //     timeOfDay = 0; // 0 => night
+        // } else if (hour <= 17) {
+        //     timeOfDay = 1; // 1 => day
+        // } else if (hour <= 21) {
+        //     timeOfDay = 2; // 2 => sunset
+        // } else {
+        //     timeOfDay = 0; // 0 => night
+        // }
 
-            image = string(
-                abi.encodePacked(
-                    _ipfsHash,
-                    "/",
-                    kind,
-                    "/",
-                    Strings.toString(keyId),
-                    "-",
-                    Strings.toString(weapon),
-                    "-",
-                    Strings.toString(timeOfDay)
-                )
-            );
-        }
-        else if (lockAddress == _weaponLock) {
-            kind = "weapons";
+        // // If the calling contract is the avatar contract
+        // if (lockAddress == _avatarLock) {
+        //     kind = "avatars";
+        //     uint weapon = 0;
 
-            image = string(
-                abi.encodePacked(
-                    _ipfsHash,
-                    "/",
-                    kind,
-                    "/",
-                    Strings.toString(keyId)
-                )
-            );
+        //     // Check if there is a mapping!
+        //     if (avatarsWeapons[keyId] > 0) {
+        //         // If there is one, let's check the owner and make sure it's the correct one
+        //         IPublicLock weaponLock = IPublicLock(_weaponLock);
+        //         // TODO change me in v10!
+        //         uint weaponExpiration = weaponLock.keyExpirationTimestampFor(owner);
+        //         address weaponOwner = weaponLock.ownerOf(keyId);
+        //         if (weaponExpiration > block.timestamp && weaponOwner == owner) {
+        //             weapon = avatarsWeapons[keyId];
+        //         }
+        //     }
 
-        }
+        //     image = string(
+        //         abi.encodePacked(
+        //             _ipfsHash,
+        //             "/",
+        //             kind,
+        //             "/",
+        //             Strings.toString(keyId),
+        //             "-",
+        //             Strings.toString(weapon),
+        //             "-",
+        //             Strings.toString(timeOfDay)
+        //         )
+        //     );
+        // }
+        // else if (lockAddress == _weaponLock) {
+        //     kind = "weapons";
+
+        //     image = string(
+        //         abi.encodePacked(
+        //             _ipfsHash,
+        //             "/",
+        //             kind,
+        //             "/",
+        //             Strings.toString(keyId)
+        //         )
+        //     );
+
+        // }
 
 
         // create the json that includes the image
