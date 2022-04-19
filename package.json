@@ -6,6 +6,7 @@
   "author": "Clement Renaud <clement@clementrenaud.com>",
   "license": "MIT",
   "dependencies": {
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@openzeppelin/contracts": "4.5.0",
     "@unlock-protocol/hardhat-plugin": "^0.0.7",
     "hardhat": "2.8.4"
