@@ -202,7 +202,7 @@ describe("onTokenUri", () => {
 
       expect(metadata.kind).to.eq('gundan')
       expect(metadata.moment).to.eq('night')
-      expect(metadata.weapon).to.eq(3)
+      expect(metadata.weapon).to.eq(1)
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/1.svg")
 
 
@@ -239,8 +239,30 @@ describe("onTokenUri", () => {
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/buntai/2-1-0.svg')
       expect(metadata.kind).to.equal('buntai')
       expect(metadata.moment).to.equal('night')
-      expect(metadata.weapon).to.equal(2)
+      expect(metadata.weapon).to.equal(1)
 
+    })
+
+    it('should return the whole thing without the weapon when it was transfered!', async () => {
+      const [purchaser] = await ethers.getSigners();
+      const {
+        avatarLock,
+        buntaiLock,
+        gundanLock,
+      } = await setup()
+
+
+      // First avatar is a gundan!
+      await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+      // Let's transfer the weapon away!
+      await (await gundanLock.transferFrom(purchaser.address, '0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44', 1)).wait()
+
+      metadata = parseJsonDataUri(
+        await avatarLock.tokenURI(1)
+      );
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-0-0.svg')
+      expect(metadata.weapon).to.equal(0)
     })
   })
 

@@ -198,7 +198,7 @@ contract Hook {
         // create the json that includes the image
         // We need to include more properties!
         string memory json = string(
-            abi.encodePacked('{"image": "', image, '", "kind": "', kind, '", "moment": "', moment, '", "weapon": ', Strings.toString(keyId), '}')
+            abi.encodePacked('{"image": "', image, '", "kind": "', kind, '", "moment": "', moment, '", "weapon": ', Strings.toString(weapon), '}')
         );
 
         // render the base64 encoded json metadata
