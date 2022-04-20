@@ -33,7 +33,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      mainnet: 'HPSH1KQDPJTNAPU3335G931SC6Y3ZYK3BF'
+      mainnet: 'HPSH1KQDPJTNAPU3335G931SC6Y3ZYK3BF',
+      rinkeby: 'HPSH1KQDPJTNAPU3335G931SC6Y3ZYK3BF',
     }
   },
   unlock: {
