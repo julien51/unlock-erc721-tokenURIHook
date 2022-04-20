@@ -183,8 +183,6 @@ contract Hook {
                 abi.encodePacked(
                     _avatarIpfsHash,
                     "/",
-                    kind,
-                    "/",
                     Strings.toString(keyId),
                     "-",
                     Strings.toString(weapon),
@@ -198,7 +196,7 @@ contract Hook {
         // create the json that includes the image
         // We need to include more properties!
         string memory json = string(
-            abi.encodePacked('{"image": "', image, '", "kind": "', kind, '", "moment": "', moment, '", "weapon": ', Strings.toString(weapon), '}')
+            abi.encodePacked('{ "image": "', image, '", "attributes": [ {"trait_type": "faction", "value": "', kind,'"}, {"trait_type": "momentOfDay", "value": "', moment,'"},  {"trait_type": "weapon", "value": "', Strings.toString(weapon),'"}], "description": "Tales of Elatora is a community-driven fantasy world, written novel and an RPG. This ToE NFT grants access to the story, the game, the community and gives the holder voting rights. https://talesofelatora.com/", "external_url":"https://talesofelatora.com/", "name": "Tales of Elatora - Avatar"}')
         );
 
         // render the base64 encoded json metadata

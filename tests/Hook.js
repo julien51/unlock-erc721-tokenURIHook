@@ -160,9 +160,10 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(1)
       );
 
-      expect(metadata.kind).to.eq('gundan')
-      expect(metadata.moment).to.eq('night')
-      expect(metadata.weapon).to.eq(1)
+      expect(metadata.attributes[0].trait_type).to.eq('faction')
+      expect(metadata.attributes[0].value).to.eq('gundan')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('1')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/1.svg")
 
 
@@ -173,9 +174,10 @@ describe("onTokenUri", () => {
         await buntaiLock.tokenURI(1)
       );
 
-      expect(metadata.kind).to.eq('buntai')
-      expect(metadata.moment).to.eq('night')
-      expect(metadata.weapon).to.eq(1)
+      expect(metadata.attributes[0].trait_type).to.eq('faction')
+      expect(metadata.attributes[0].value).to.eq('buntai')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('1')
       expect(metadata.image).to.eq("BUNTAI_IPFS_HASH/1.svg")
 
       // Third weapon is a gundan!
@@ -185,9 +187,10 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(2)
       );
 
-      expect(metadata.kind).to.eq('gundan')
-      expect(metadata.moment).to.eq('night')
-      expect(metadata.weapon).to.eq(2)
+      expect(metadata.attributes[0].trait_type).to.eq('faction')
+      expect(metadata.attributes[0].value).to.eq('gundan')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('2')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/2.svg")
 
       // Fourth weapon is a buntai, but we don't care
@@ -200,9 +203,10 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(3)
       );
 
-      expect(metadata.kind).to.eq('gundan')
-      expect(metadata.moment).to.eq('night')
-      expect(metadata.weapon).to.eq(1)
+      expect(metadata.attributes[0].trait_type).to.eq('faction')
+      expect(metadata.attributes[0].value).to.eq('gundan')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('1')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/1.svg")
 
 
@@ -225,10 +229,10 @@ describe("onTokenUri", () => {
       metadata = parseJsonDataUri(
         await avatarLock.tokenURI(1)
       );
-      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-1-0.svg')
-      expect(metadata.kind).to.equal('gundan')
-      expect(metadata.moment).to.equal('night')
-      expect(metadata.weapon).to.equal(1)
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-0.svg')
+      expect(metadata.attributes[0].value).to.eq('gundan')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('1')
 
       // Second avatar is a buntai!
       await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
@@ -236,10 +240,10 @@ describe("onTokenUri", () => {
       metadata = parseJsonDataUri(
         await avatarLock.tokenURI(2)
       );
-      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/buntai/2-1-0.svg')
-      expect(metadata.kind).to.equal('buntai')
-      expect(metadata.moment).to.equal('night')
-      expect(metadata.weapon).to.equal(1)
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/2-1-0.svg')
+      expect(metadata.attributes[0].value).to.eq('buntai')
+      expect(metadata.attributes[1].value).to.equal('night')
+      expect(metadata.attributes[2].value).to.equal('1')
 
     })
 
@@ -261,8 +265,8 @@ describe("onTokenUri", () => {
       metadata = parseJsonDataUri(
         await avatarLock.tokenURI(1)
       );
-      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-0-0.svg')
-      expect(metadata.weapon).to.equal(0)
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
+      expect(metadata.attributes[2].value).to.equal('0')
     })
   })
 
@@ -283,24 +287,28 @@ describe("onTokenUri", () => {
     metadata = parseJsonDataUri(
       await avatarLock.tokenURI(1)
     );
-    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-1-0.svg')
-    expect(metadata.moment).to.equal('night')
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-0.svg')
+    expect(metadata.attributes[1].trait_type).to.equal('momentOfDay')
+    expect(metadata.attributes[1].value).to.equal('night')
 
     // Move to 9AM (day!)
     await moveTo(9, 0);
     metadata = parseJsonDataUri(
       await avatarLock.tokenURI(1)
     );
-    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-1-1.svg')
-    expect(metadata.moment).to.equal('day')
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-1.svg')
+    expect(metadata.attributes[1].trait_type).to.equal('momentOfDay')
+    expect(metadata.attributes[1].value).to.equal('day')
 
     // Move to 7 PM (evening!)
     await moveTo(19, 0);
     metadata = parseJsonDataUri(
       await avatarLock.tokenURI(1)
     );
-    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/gundan/1-1-2.svg')
-    expect(metadata.moment).to.equal('sunset')
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-2.svg')
+    expect(metadata.attributes[1].trait_type).to.equal('momentOfDay')
+    expect(metadata.attributes[1].value).to.equal('sunset')
+
   });
 
 });

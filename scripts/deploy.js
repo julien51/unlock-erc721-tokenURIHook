@@ -1,13 +1,24 @@
 /* eslint-disable node/no-unsupported-features/es-syntax */
 const { unlock, ethers, run, network } = require("hardhat");
 
-const avatarIpfsHash = "QmNxQ71De6NHyyjhP9toaBXPGDCQEPM7Ua4ppQZBMPA9sC";
-const buntaiWeaponIpfsHash = "QmYY8FAnpWUHmrhs7ofjXPdkPRiT1oQPfKiXsoV8sg8iJQ";
-const gundanWeaponIpfsHash = "QmUfMgRBiwhDEWCaWP2m5jNfrp8HmN2abuEoA5Z6Ncw8gn";
+const avatarIpfsHash = "https://talesofelatoracollection.s3.filebase.com/ToEFinal";
+const buntaiWeaponIpfsHash = "ipfs://QmYY8FAnpWUHmrhs7ofjXPdkPRiT1oQPfKiXsoV8sg8iJQ";
+const gundanWeaponIpfsHash = "ipfs://QmUfMgRBiwhDEWCaWP2m5jNfrp8HmN2abuEoA5Z6Ncw8gn";
 const totalBuntaiWeapons = 45;
 const totalGundanWeapons = 40;
 
 const avatarLockAddress = "0x851f310949e02c791d4f5120c9d319bba4e0157e"
+
+async function deployHook(avatarLockAddress, buntaiLockAddress, gundanLockAddress, mappingAddress, avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons) {
+
+  // Deploy hook
+  const Hook = await ethers.getContractFactory("Hook");
+  const hook = await Hook.deploy(avatarLockAddress, buntaiLockAddress, gundanLockAddress, mappingAddress, avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons);
+
+  await hook.deployed()
+  console.log(`hook deployed to ${hook.address}`)
+  return hook
+}
 
 async function main() {
 
@@ -15,6 +26,16 @@ async function main() {
     console.log('deploying protocol')
     await unlock.deployProtocol()
   }
+
+  if (network.config.chainId === 1) {
+    console.log('deploying hook only')
+    await deployHook('0x39aEcbE181d94D721ef80924f10B77c785299397', '0xA3a1e06E950D740ec255F44d18445631A18E5874', '0x93A9f5FA632224117802DCfbf4aa9377fb7448ab', '0x68b9c3ab5173e665adb082f2bd444a92d704a1df', avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons)
+
+    console.log('Please remember to set hooks on the 3 contracts!')
+
+    process.exit()
+  }
+
 
   const { lock: avatarLock } = await unlock.createLock({
     expirationDuration: ethers.constants.MaxUint256,
@@ -58,13 +79,8 @@ async function main() {
   await mapping.deployed()
   console.log(`mapping deployed to ${mapping.address}`)
 
-  // Deploy hook
-  const Hook = await ethers.getContractFactory("Hook");
-  const hook = await Hook.deploy(avatarLock.address, buntaiLock.address, gundanLock.address, mapping.address, avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons);
 
-
-  await hook.deployed()
-  console.log(`hook deployed to ${hook.address}`)
+  const hook = await deployHook(avatarLock.address, buntaiLock.address, gundanLock.address, mapping.address, avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons)
 
   // Set the hook on avatar
   await (await avatarLock.setEventHooks(
