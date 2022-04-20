@@ -31,7 +31,7 @@ async function main() {
     console.log('deploying hook only')
     await deployHook('0x39aEcbE181d94D721ef80924f10B77c785299397', '0xA3a1e06E950D740ec255F44d18445631A18E5874', '0x93A9f5FA632224117802DCfbf4aa9377fb7448ab', '0x68b9c3ab5173e665adb082f2bd444a92d704a1df', avatarIpfsHash, buntaiWeaponIpfsHash, gundanWeaponIpfsHash, totalBuntaiWeapons, totalGundanWeapons)
 
-    console.log('Please remember to set hooks on the 3 contracts!')
+    console.log('Please remember to set hooks on the 3 lock contracts!')
 
     process.exit()
   }

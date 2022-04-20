@@ -5,7 +5,7 @@ import "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV10.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "hardhat/console.sol";
-import "./Layer.sol";
+import "./Mapping.sol";
 import { BokkyPooBahsDateTimeLibrary } from "./BokkyPooBahsDateTimeLibrary.sol";
 
 /**
@@ -157,11 +157,17 @@ contract Hook {
             }
 
             // TODO: support for explicit mapping!
+            Mapping m = Mapping(_mappingContract);
+            uint weaponId = m.avatarsWeapons(keyId);
+
             if (keyId % 2 == 0) {
                 kind = "buntai";
                 IPublicLock buntaiContract = IPublicLock(_buntaiLock);
-                if (buntaiContract.ownerOf(keyId/2) == owner) {
-                    weapon = keyId/2 % _totalBuntaiWeapons;
+                if (weaponId == 0) {
+                   weaponId = keyId/2;
+                }
+                if (buntaiContract.ownerOf(weaponId) == owner) {
+                    weapon = weaponId % _totalBuntaiWeapons;
                     // Loop back when modulo is 0!
                     if (weapon == 0) {
                         weapon = _totalBuntaiWeapons;
@@ -170,8 +176,11 @@ contract Hook {
             } else {
                 kind = "gundan";
                 IPublicLock gundanContract = IPublicLock(_gundanLock);
-                if (gundanContract.ownerOf((keyId + 1)/2) == owner) {
-                    weapon = ((keyId + 1)/2) % _totalGundanWeapons;
+                if (weaponId == 0) {
+                   weaponId = (keyId + 1)/2;
+                }
+                if (gundanContract.ownerOf(weaponId) == owner) {
+                    weapon = weaponId % _totalGundanWeapons;
                     // Loop back when modulo is 0!
                     if (weapon == 0) {
                         weapon = _totalGundanWeapons;

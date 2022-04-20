@@ -22,9 +22,9 @@ contract Mapping {
         require(msg.sender == IPublicLock(_avatarLock).ownerOf(avatarId), "Must own avatar");
 
         if (avatarId % 2 == 0) {
-            require(msg.sender == IPublicLock(_buntaiWeaponLock).ownerOf(avatarId), "Must own buntai weapon");
+            require(msg.sender == IPublicLock(_buntaiWeaponLock).ownerOf(weaponId), "Must own buntai weapon");
         } else {
-            require(msg.sender == IPublicLock(_gundanWeaponLock).ownerOf(avatarId), "Must own gundan weapon");
+            require(msg.sender == IPublicLock(_gundanWeaponLock).ownerOf(weaponId), "Must own gundan weapon");
         }
         avatarsWeapons[avatarId] = weaponId;
     }

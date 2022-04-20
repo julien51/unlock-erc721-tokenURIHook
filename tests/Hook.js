@@ -268,6 +268,69 @@ describe("onTokenUri", () => {
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
       expect(metadata.attributes[2].value).to.equal('0')
     })
+
+    it('should return the whole thing with the weapon when it was transfered and the mapping matches', async () => {
+      const [purchaser] = await ethers.getSigners();
+      const {
+        avatarLock,
+        buntaiLock,
+        gundanLock,
+        mapping,
+      } = await setup()
+
+      // First avatar is a gundan!
+      await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+      // Let's transfer the weapon away!
+      await (await gundanLock.transferFrom(purchaser.address, '0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44', 1)).wait()
+
+      // Let's create weapon and give it to the user
+      const grantTx = await (await gundanLock.grantKeys([purchaser.address], [ethers.constants.MaxUint256], [purchaser.address])).wait()
+      const grantedWeaponId = grantTx.events[1].args.tokenId
+
+      // Add to mapping
+      await (await mapping.addMapping(1, grantedWeaponId)).wait()
+
+      // Check that we now have the new weapon!
+      metadata = parseJsonDataUri(
+        await avatarLock.tokenURI(1)
+      );
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-2-0.svg')
+      expect(metadata.attributes[2].value).to.equal('2')
+    })
+
+    it('should return the whole thing without the weapon when it was transfered and the mapping does not match', async () => {
+      const [purchaser] = await ethers.getSigners();
+      const {
+        avatarLock,
+        buntaiLock,
+        gundanLock,
+        mapping,
+      } = await setup()
+
+      // First avatar is a gundan!
+      await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+      // Let's transfer the weapon away!
+      await (await gundanLock.transferFrom(purchaser.address, '0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44', 1)).wait()
+
+      // Let's create weapon and give it to the user
+      const grantTx = await (await gundanLock.grantKeys([purchaser.address], [ethers.constants.MaxUint256], [purchaser.address])).wait()
+      const grantedWeaponId = grantTx.events[1].args.tokenId
+
+      // Add to mapping
+      await (await mapping.addMapping(1, grantedWeaponId)).wait()
+
+      // Let's transfer the weapon away!
+      await (await gundanLock.transferFrom(purchaser.address, '0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44', 2)).wait()
+
+      // Check that we now have the new weapon!
+      metadata = parseJsonDataUri(
+        await avatarLock.tokenURI(1)
+      );
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
+      expect(metadata.attributes[2].value).to.equal('0')
+    })
   })
 
   it("should return the right time of day", async function () {
