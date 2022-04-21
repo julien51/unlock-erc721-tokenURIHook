@@ -160,10 +160,11 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(1)
       );
 
+      expect(metadata.attributes.length).to.eq(2)
       expect(metadata.attributes[0].trait_type).to.eq('faction')
       expect(metadata.attributes[0].value).to.eq('gundan')
-      expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('1')
+      expect(metadata.attributes[1].trait_type).to.eq('class')
+      expect(metadata.attributes[1].value).to.equal('Rogue')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/1.svg")
 
 
@@ -174,10 +175,11 @@ describe("onTokenUri", () => {
         await buntaiLock.tokenURI(1)
       );
 
+      expect(metadata.attributes.length).to.eq(2)
       expect(metadata.attributes[0].trait_type).to.eq('faction')
       expect(metadata.attributes[0].value).to.eq('buntai')
-      expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('1')
+      expect(metadata.attributes[1].trait_type).to.eq('class')
+      expect(metadata.attributes[1].value).to.equal('Hunter')
       expect(metadata.image).to.eq("BUNTAI_IPFS_HASH/1.svg")
 
       // Third weapon is a gundan!
@@ -187,10 +189,11 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(2)
       );
 
+      expect(metadata.attributes.length).to.eq(2)
       expect(metadata.attributes[0].trait_type).to.eq('faction')
       expect(metadata.attributes[0].value).to.eq('gundan')
-      expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('2')
+      expect(metadata.attributes[1].trait_type).to.eq('class')
+      expect(metadata.attributes[1].value).to.equal('Rogue')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/2.svg")
 
       // Fourth weapon is a buntai, but we don't care
@@ -203,10 +206,11 @@ describe("onTokenUri", () => {
         await gundanLock.tokenURI(3)
       );
 
+      expect(metadata.attributes.length).to.eq(2)
       expect(metadata.attributes[0].trait_type).to.eq('faction')
       expect(metadata.attributes[0].value).to.eq('gundan')
-      expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('1')
+      expect(metadata.attributes[1].trait_type).to.eq('class')
+      expect(metadata.attributes[1].value).to.equal('Rogue')
       expect(metadata.image).to.eq("GUNDAN_IPFS_HASH/1.svg")
 
 
@@ -232,7 +236,7 @@ describe("onTokenUri", () => {
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-0.svg')
       expect(metadata.attributes[0].value).to.eq('gundan')
       expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('1')
+      expect(metadata.attributes[2].value).to.equal('Rogue')
 
       // Second avatar is a buntai!
       await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
@@ -243,7 +247,7 @@ describe("onTokenUri", () => {
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/2-1-0.svg')
       expect(metadata.attributes[0].value).to.eq('buntai')
       expect(metadata.attributes[1].value).to.equal('night')
-      expect(metadata.attributes[2].value).to.equal('1')
+      expect(metadata.attributes[2].value).to.equal('Hunter')
 
     })
 
@@ -266,7 +270,7 @@ describe("onTokenUri", () => {
         await avatarLock.tokenURI(1)
       );
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
-      expect(metadata.attributes[2].value).to.equal('0')
+      expect(metadata.attributes[2].value).to.equal('Class-less')
     })
 
     it('should return the whole thing with the weapon when it was transfered and the mapping matches', async () => {
@@ -287,6 +291,7 @@ describe("onTokenUri", () => {
       // Let's create weapon and give it to the user
       const grantTx = await (await gundanLock.grantKeys([purchaser.address], [ethers.constants.MaxUint256], [purchaser.address])).wait()
       const grantedWeaponId = grantTx.events[1].args.tokenId
+      console.log(`granted weapon id ${grantedWeaponId}`)
 
       // Add to mapping
       await (await mapping.addMapping(1, grantedWeaponId)).wait()
@@ -296,7 +301,7 @@ describe("onTokenUri", () => {
         await avatarLock.tokenURI(1)
       );
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-2-0.svg')
-      expect(metadata.attributes[2].value).to.equal('2')
+      expect(metadata.attributes[2].value).to.equal('Rogue')
     })
 
     it('should return the whole thing without the weapon when it was transfered and the mapping does not match', async () => {
@@ -314,6 +319,13 @@ describe("onTokenUri", () => {
       // Let's transfer the weapon away!
       await (await gundanLock.transferFrom(purchaser.address, '0xdd8e2548da5a992a63ae5520c6bc92c37a2bcc44', 1)).wait()
 
+      metadata = parseJsonDataUri(
+        await avatarLock.tokenURI(1)
+      );
+
+      expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
+      expect(metadata.attributes[2].value).to.equal('Class-less')
+      
       // Let's create weapon and give it to the user
       const grantTx = await (await gundanLock.grantKeys([purchaser.address], [ethers.constants.MaxUint256], [purchaser.address])).wait()
       const grantedWeaponId = grantTx.events[1].args.tokenId
@@ -329,7 +341,7 @@ describe("onTokenUri", () => {
         await avatarLock.tokenURI(1)
       );
       expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-0-0.svg')
-      expect(metadata.attributes[2].value).to.equal('0')
+      expect(metadata.attributes[2].value).to.equal('Class-less')
     })
   })
 
@@ -374,4 +386,124 @@ describe("onTokenUri", () => {
 
   });
 
+  it('should return the correct class', async () => {
+    const [purchaser] = await ethers.getSigners();
+    const {
+      avatarLock,
+      buntaiLock,
+      gundanLock,
+    } = await setup()
+
+
+    // First avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(1)
+    );
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/1-1-0.svg')
+    expect(metadata.attributes[0].value).to.eq('gundan')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Rogue')
+
+    // Second avatar is a buntai!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(2)
+    );
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/2-1-0.svg')
+    expect(metadata.attributes[0].value).to.eq('buntai')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Hunter')
+
+    // Third avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(3)
+    );
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/3-2-0.svg')
+    expect(metadata.attributes[0].value).to.eq('gundan')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Rogue')
+
+    // Fourth avatar is a buntai!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(4)
+    );
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/4-2-0.svg')
+    expect(metadata.attributes[0].value).to.eq('buntai')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Warrior')
+
+    // Fifth avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(5)
+    );
+    //expect(metadata.image).to.equal('AVATAR_IPFS_HASH/5-3-0.svg')
+    expect(metadata.attributes[0].value).to.eq('gundan')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Rogue')
+
+    // 6 avatar is a buntai!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(6)
+    );
+    //expect(metadata.image).to.equal('AVATAR_IPFS_HASH/6-3-0.svg')
+    expect(metadata.attributes[0].value).to.eq('buntai')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Warrior')
+
+    // 7 avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(7)
+    );
+    //expect(metadata.image).to.equal('AVATAR_IPFS_HASH/7-4-0.svg')
+    expect(metadata.attributes[0].value).to.eq('gundan')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Rogue')
+
+    // 8 avatar is a buntai!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(8)
+    );
+    expect(metadata.image).to.equal('AVATAR_IPFS_HASH/8-4-0.svg')
+    expect(metadata.attributes[0].value).to.eq('buntai')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Warrior')
+
+
+    // 9 avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(9)
+    );
+   // expect(metadata.image).to.equal('AVATAR_IPFS_HASH/9-5-0.svg')
+    expect(metadata.attributes[0].value).to.eq('gundan')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Hunter')
+
+    // 10 avatar is a gundan!
+    await (await avatarLock.purchase([0], [purchaser.address], [purchaser.address], [purchaser.address], [0])).wait()
+
+    metadata = parseJsonDataUri(
+      await avatarLock.tokenURI(10)
+    );
+   // expect(metadata.image).to.equal('AVATAR_IPFS_HASH/10-5-0.svg')
+    expect(metadata.attributes[0].value).to.eq('buntai')
+    expect(metadata.attributes[1].value).to.equal('night')
+    expect(metadata.attributes[2].value).to.equal('Rogue')
+  })
 });
